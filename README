@@ -2,6 +2,9 @@ README FILE for assignment1
 
 collaborators: none 
 
+known bugs:
+    -spacing of output when files and directories are passed: prints in column rather than row, doesnt print name of directory when directory is passed with another directory or file. 
+
 sources: 
 https://www.mycplus.com/tutorials/c-programming-tutorials/ternary-operator-in-c/
 http://www.gnu.org/software/libc/manual/html_node/Permission-Bits.html

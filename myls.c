@@ -43,7 +43,7 @@ int main(int argc, char *argv[]){
         }
     }
 
-    //check command line args and print accordingly 
+    //check command line args and call print_args with appropriate parameters 
     if(argc > 1){
         for(int i = 1; i <= (argc-1); i++){ 
             if(argv[i][0] != '-'){
@@ -112,21 +112,18 @@ void print_l(struct dirent *dir_entry){
 //function to check flags and print file/directory info accordingly
 void flag_test(struct dirent *dir_entry, int flag_a, int flag_l){
     if(flag_a == 0){
-        if((dir_entry->d_name[0] != '.')){ 
-            if(flag_l == 0){
-                printf("%s ", dir_entry->d_name);
-            }else{
-                print_l(dir_entry);
-            } 
-        }
+        if((dir_entry->d_name[0] == '.')){ 
+            return; 
+        } 
+    }
+    if(flag_l == 0){
+        printf("%s ", dir_entry->d_name);
     }else{
-        if(flag_l == 0){
-            printf("%s ", dir_entry->d_name);
-        }else
-            print_l(dir_entry);
+        print_l(dir_entry);
     }
 }
 
+//function to handle cmd-line args (files and directories)
 void print_args(char *dir_arg, char *file, int flag_a, int flag_l, int flag_file){
     //open directory
     DIR *dir = opendir(dir_arg);
