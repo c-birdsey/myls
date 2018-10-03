@@ -70,6 +70,9 @@ int main(int argc, char *argv[]){
     if(data_arg == 0){
         print_args(".", "NULL", flag_a, flag_l, flag_file); //if myls is called with no dir/file args
     }
+    if(flag_l == 0){
+        printf("\n");
+    }
 }
 
 //function to print file/directory data with ls option -l
@@ -144,9 +147,6 @@ void print_args(char *dir_arg, char *file, int flag_a, int flag_l, int flag_file
         }else{
             flag_test(dir_entry, flag_a, flag_l); 
         }
-    }
-    if(flag_l == 0){
-        printf("\n");
     }
     if(errno == 1){
         perror("readdir");
