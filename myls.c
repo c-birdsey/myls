@@ -1,7 +1,6 @@
 //calder birdsey
 //cs315
 //assignment 01 
-//9/20/18 
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -14,10 +13,11 @@
 #include <sys/stat.h>
 #include <pwd.h>
 #include <time.h>
+#include <libgen.h>
 
-extern void print_l(struct dirent *dir_entry); 
-extern void flag_test(struct dirent *dir_entry, int flag_a, int flag_l);
-extern void print_args(char *dir_arg, char *file, int flag_a, int flag_l, int flag_file); 
+void print_long(struct dirent *dir_entry); 
+void flag_test(struct dirent *dir_entry, int flag_a, int flag_l);
+void print_args(char *dir_arg, char *file, int flag_a, int flag_l, int flag_file); 
 
 //main function    
 int main(int argc, char *argv[]){
@@ -28,9 +28,10 @@ int main(int argc, char *argv[]){
     int data_arg = 0; //flagged if dir/file args are passed on cmd-line 
 
     //get options 
-    int opt; 
-    while((opt = getopt(argc, argv, "al")) != -1) {
-        switch (opt) {
+    int optind; 
+    while((optind = getopt(argc, argv, "al")) != -1) {
+        //printf("%d\n", optind);
+        switch (optind) {
         case 'l':   
             flag_l = 1; 
             break;
@@ -60,27 +61,33 @@ int main(int argc, char *argv[]){
                     }
                     if(S_ISDIR(argbuf.st_mode)){
                         printf("%s:\n", arg); 
+                        //const char path[] = dirname(arg); 
+                        //strcat(path, arg); 
                         print_args(arg, "NULL", flag_a, flag_l, flag_file); 
+
                     }
                     flag_file = 0; //resetting file_flag each iteration through 'for' loop
+                    if(i < argc-1){
+                        printf("\n"); 
+                    }
+                    if(flag_l == 0){
+                        printf("\n");
+                    }
                 }      
             }
         }
     }
     if(data_arg == 0){
-        print_args(".", "NULL", flag_a, flag_l, flag_file); //if myls is called with no dir/file args
-    }
-    if(flag_l == 0){
-        printf("\n");
+        print_args(".", "NULL", flag_a, flag_l, flag_file); //if myls is called with no dir/file arg
     }
 }
 
 //function to print file/directory data with ls option -l
-void print_l(struct dirent *dir_entry){
+void print_long(struct dirent *dir_entry){
     struct stat statbuf; 
     if(stat(dir_entry->d_name, &statbuf) == -1){
-        perror("stat"); 
-        exit(EXIT_FAILURE); 
+        perror("stat");
+        return;   
     }
     printf((S_ISDIR(statbuf.st_mode)) ? "d" : "-"); 
     printf((statbuf.st_mode & S_IRUSR) ? "r" : "-");
@@ -94,9 +101,17 @@ void print_l(struct dirent *dir_entry){
     printf((statbuf.st_mode & S_IXOTH) ? "x " : "- ");
     printf("%li ", statbuf.st_nlink);
     struct passwd *pw; 
+    errno = 0; 
     pw = getpwuid(statbuf.st_uid);  
+    if(errno != 0){
+        printf("%d ", statbuf.st_uid); 
+    }
+    errno = 0; 
     printf("%s ", pw->pw_name); 
     pw = getpwuid(statbuf.st_gid);
+    if(errno != 0){
+        printf("%d ", statbuf.st_gid); 
+    }
     printf("%s ", pw->pw_name); 
     printf("%5ld ", statbuf.st_size);
     struct tm *tmp;
@@ -122,7 +137,7 @@ void flag_test(struct dirent *dir_entry, int flag_a, int flag_l){
     if(flag_l == 0){
         printf("%s ", dir_entry->d_name);
     }else{
-        print_l(dir_entry);
+        print_long(dir_entry);
     }
 }
 
@@ -136,8 +151,7 @@ void print_args(char *dir_arg, char *file, int flag_a, int flag_l, int flag_file
     } 
 
     //read and print directory/file data 
-    struct dirent *dir_entry; 
-    rewinddir(dir); 
+    struct dirent *dir_entry;  
     errno = 0;
     while((dir_entry = readdir(dir))!= NULL){ 
         if(flag_file == 1){
