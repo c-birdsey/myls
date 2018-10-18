@@ -3,13 +3,11 @@ README FILE for assignment1
 collaborators: none 
 
 known bugs:
--issue when printing certain files in parent directory with -l. e.g. when ./myls .. -la is run only works for . and .. files, otherwise stat error 
-
--need to optimize main: ask about how to use the optind variable better 
+-none 
 
 sources: 
 https://www.mycplus.com/tutorials/c-programming-tutorials/ternary-operator-in-c/
 http://www.gnu.org/software/libc/manual/html_node/Permission-Bits.html
 https://en.wikipedia.org/wiki/Ls
 https://stackoverflow.com/questions/24145650/makefile6-missing-separator-stop
-
+https://stackoverflow.com/questions/40898697/whats-wrong-with-my-stat-function-in-c-in-linux

@@ -15,8 +15,8 @@
 #include <time.h>
 #include <libgen.h>
 
-void print_long(struct dirent *dir_entry); 
-void flag_test(struct dirent *dir_entry, int flag_a, int flag_l);
+void print_long(char *dir_arg, struct dirent *dir_entry); 
+void flag_handler(char *dir_arg, struct dirent *dir_entry, int flag_a, int flag_l);
 void print_args(char *dir_arg, char *file, int flag_a, int flag_l, int flag_file); 
 
 //main function    
@@ -24,14 +24,12 @@ int main(int argc, char *argv[]){
     //initialize flags
     int flag_l = 0; 
     int flag_a = 0; 
-    int flag_file = 0; //flag if a file is passed on cmd-line
-    int data_arg = 0; //flagged if dir/file args are passed on cmd-line 
+    int flag_file = 0; 
 
     //get options 
-    int optind; 
-    while((optind = getopt(argc, argv, "al")) != -1) {
-        //printf("%d\n", optind);
-        switch (optind) {
+    int opt; 
+    while((opt = getopt(argc, argv, "al")) != -1) {
+        switch (opt) {
         case 'l':   
             flag_l = 1; 
             break;
@@ -45,47 +43,45 @@ int main(int argc, char *argv[]){
     }
 
     //check command line args and call print_args with appropriate parameters 
-    if(argc > 1){
-        for(int i = 1; i <= (argc-1); i++){ 
-            if(argv[i][0] != '-'){
-                struct stat argbuf;
-                char *arg = argv[i]; 
-                if((stat(arg, &argbuf)) == -1){
-                    data_arg = 1; 
-                    printf("myls: cannot access '%s': No such file or directory\n", argv[i]);
-                }else{
-                    data_arg = 1;
-                    if(S_ISREG(argbuf.st_mode)){
-                        flag_file = 1;
-                        print_args(".", arg, flag_a, flag_l, flag_file); 
-                    }
-                    if(S_ISDIR(argbuf.st_mode)){
-                        printf("%s:\n", arg); 
-                        //const char path[] = dirname(arg); 
-                        //strcat(path, arg); 
-                        print_args(arg, "NULL", flag_a, flag_l, flag_file); 
-
-                    }
-                    flag_file = 0; //resetting file_flag each iteration through 'for' loop
-                    if(i < argc-1){
-                        printf("\n"); 
-                    }
-                    if(flag_l == 0){
-                        printf("\n");
-                    }
-                }      
-            }
+    if(optind == argc){
+        print_args(".", "NULL", flag_a, flag_l, flag_file);
+        if(flag_l == 0){
+            printf("\n");
         }
-    }
-    if(data_arg == 0){
-        print_args(".", "NULL", flag_a, flag_l, flag_file); //if myls is called with no dir/file arg
+    }else{
+        while(optind < argc){
+            struct stat argbuf;
+            char *arg = argv[optind]; 
+            if((stat(arg, &argbuf)) == -1){
+                printf("myls: cannot access '%s': No such file or directory\n", argv[optind]);
+            }else{
+                if(S_ISREG(argbuf.st_mode)){
+                    flag_file = 1;
+                    print_args(".", arg, flag_a, flag_l, flag_file); 
+                }
+                if(S_ISDIR(argbuf.st_mode)){
+                    printf("%s:\n", arg); 
+                    print_args(arg, "NULL", flag_a, flag_l, flag_file); 
+                }
+                flag_file = 0;
+                if(optind < argc-1){
+                    printf("\n"); 
+                }
+                if(flag_l == 0){
+                    printf("\n");
+                }
+            }
+            optind ++; 
+        }    
     }
 }
 
 //function to print file/directory data with ls option -l
-void print_long(struct dirent *dir_entry){
+void print_long(char *dir_arg, struct dirent *dir_entry){
     struct stat statbuf; 
-    if(stat(dir_entry->d_name, &statbuf) == -1){
+    char fp[PATH_MAX];
+    sprintf(fp, "%s/%s", dir_arg, dir_entry->d_name);
+    if(stat(fp, &statbuf) == -1){
         perror("stat");
         return;   
     }
@@ -128,7 +124,7 @@ void print_long(struct dirent *dir_entry){
 }
 
 //function to check flags and print file/directory info accordingly
-void flag_test(struct dirent *dir_entry, int flag_a, int flag_l){
+void flag_handler(char *dir_arg, struct dirent *dir_entry, int flag_a, int flag_l){
     if(flag_a == 0){
         if((dir_entry->d_name[0] == '.')){ 
             return; 
@@ -137,11 +133,11 @@ void flag_test(struct dirent *dir_entry, int flag_a, int flag_l){
     if(flag_l == 0){
         printf("%s ", dir_entry->d_name);
     }else{
-        print_long(dir_entry);
+        print_long(dir_arg, dir_entry);
     }
 }
 
-//function to handle cmd-line args (files and directories)
+//function to handle cmd-line args
 void print_args(char *dir_arg, char *file, int flag_a, int flag_l, int flag_file){
     //open directory
     DIR *dir = opendir(dir_arg);
@@ -155,18 +151,18 @@ void print_args(char *dir_arg, char *file, int flag_a, int flag_l, int flag_file
     errno = 0;
     while((dir_entry = readdir(dir))!= NULL){ 
         if(flag_file == 1){
-            if(strcmp(dir_entry->d_name, file) == 0){ //comparing current file to cmd-line arg
-                flag_test(dir_entry, flag_a, flag_l);
+            if(strcmp(dir_entry->d_name, file) == 0){
+                flag_handler(dir_arg, dir_entry, flag_a, flag_l);
             }
         }else{
-            flag_test(dir_entry, flag_a, flag_l); 
+            flag_handler(dir_arg, dir_entry, flag_a, flag_l); 
         }
     }
     if(errno == 1){
         perror("readdir");
         exit(EXIT_FAILURE); 
     }
-
+    
     //close directory
     closedir(dir);
 }
